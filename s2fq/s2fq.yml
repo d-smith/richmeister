@@ -9,6 +9,12 @@ Parameters:
   ZipFileName:
     Type: String
     Default: s2fq.zip
+  StreamArn:
+    Type: String
+    Description: StreamArn to consume events from
+  TableName:
+    Type: String
+    Description: Name of table generating stream events
 
 Resources:
   S2FQLambda:
@@ -44,3 +50,23 @@ Resources:
             Action:
             - logs:*
             Resource: arn:aws:logs:*:*:*
+      - PolicyName: streams
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:DescribeStream
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:ListStreams
+            Resource: !Join [ '', ['arn:aws:dynamodb:', !Ref 'AWS::Region' , ':', !Ref 'AWS::AccountId', ':table/', !Ref 'TableName', '/stream/*']]
+
+  EventSourceMapping:
+    Type: "AWS::Lambda::EventSourceMapping"
+    Properties:
+      BatchSize: 1
+      Enabled: True
+      EventSourceArn: !Ref StreamArn
+      FunctionName: !GetAtt S2FQLambda.Arn
+      StartingPosition: TRIM_HORIZON
