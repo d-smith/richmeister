@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Create a lambda function to copy events from a dynamo db stream to a fifo queue.
+
+Parameters:
+  CodeBucketName:
+    Type: String
+    Description: Bucket containing lambda code zip file
+  ZipFileName:
+    Type: String
+    Default: s2fq.zip
+
+Resources:
+  S2FQLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: stream2fifo.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref CodeBucketName
+        S3Key: !Ref ZipFileName
+      Runtime: "nodejs6.10"
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+            - edgelambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:*
+            Resource: arn:aws:logs:*:*:*
