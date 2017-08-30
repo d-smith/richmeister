@@ -19,6 +19,7 @@ Parameters:
 Resources:
   S2FQLambda:
     Type: "AWS::Lambda::Function"
+    DependsOn: ReplicationQueue
     Properties:
       Handler: stream2fifo.handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -26,6 +27,10 @@ Resources:
         S3Bucket: !Ref CodeBucketName
         S3Key: !Ref ZipFileName
       Runtime: "nodejs6.10"
+      Environment:
+        Variables:
+          QUEUE_URL: !Ref ReplicationQueue
+          QUEUE_NAME: !Join [ '', [ !Ref "AWS::StackName", "-ReplQ.fifo"]]
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -50,6 +55,14 @@ Resources:
             Action:
             - logs:*
             Resource: arn:aws:logs:*:*:*
+      - PolicyName: sendmsg
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - sqs:SendMessage
+            Resource: !GetAtt [ReplicationQueue, "Arn"]
       - PolicyName: streams
         PolicyDocument:
           Version: '2012-10-17'
@@ -70,3 +83,10 @@ Resources:
       EventSourceArn: !Ref StreamArn
       FunctionName: !GetAtt S2FQLambda.Arn
       StartingPosition: TRIM_HORIZON
+
+  ReplicationQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: !Join [ '', [ !Ref "AWS::StackName", "-ReplQ.fifo"]]
+      ContentBasedDeduplication: False
+      FifoQueue: True
