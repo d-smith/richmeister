@@ -42,11 +42,28 @@ def insert(body):
    
 
 def modify(body):
+    newImage = body['newImage']
     print 'modify using {}'.format(newImage)
-    response = ddb.put_item(
-        TableName=dest_table,
-        Item=newImage
-    )
+
+    body_ts = newImage['ts']
+    print 'ts: {}'.format(body_ts)
+
+    try:
+        response = ddb.put_item(
+            TableName=dest_table,
+            Item=newImage,
+            ConditionExpression=':ts > ts',
+            ExpressionAttributeValues={
+                ':ts': body_ts
+            }
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            print 'unable to replicate modify: ConditionalCheckFailedException'
+        else:
+            raise
+    else:
+        print 'modify succeeded'
 
 def remove(body):
     keys = body['keys']
