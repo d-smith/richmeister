@@ -1,18 +1,24 @@
 
-function sleep(time, callback) {
-    var stop = new Date().getTime();
-    while(new Date().getTime() < stop + time) {
-        ;
-    }
-    callback();
-}
+var AWS = require('aws-sdk');
+var sqs = new AWS.SQS();
 
 exports.handler = (event, context, callback) => {
-    var n = 0;
-    for(;;) {
-        sleep(1000, function(){
-            console.log(`n is ${n}`);
-            n = n + 1;
-        });
+    let queueUrl = process.env.QUEUE_URL;
+    console.log(`queue url: ${queueUrl}`)
+
+    let params = {
+        QueueUrl: queueUrl,
+        MaxNumberOfMessages: 1,
+        VisibilityTimeout: 5,
+        WaitTimeSeconds: 10
     }
+   
+    console.log('receive message');
+    sqs.receiveMessage(params, function(err, data) {
+        if (err) console.log(err, err.stack);
+        else {
+            console.log(data);
+        }    
+    });
+    
 }
