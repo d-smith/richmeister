@@ -3,6 +3,7 @@ import os
 import datetime
 import time
 import json
+from botocore.exceptions import ClientError
 
 
 
@@ -24,15 +25,28 @@ def insert(body):
     newImage = body['newImage']
     print 'insert {}'.format(newImage)
 
+    try:
+        response = ddb.put_item(
+            TableName=dest_table,
+            Item=newImage,
+            ConditionExpression='attribute_not_exists(id)'
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            print 'unable to replicate insert: item with key {} exists in remote region'.format(body['keys'])
+        else:
+            raise
+    else:
+        print 'insert succeeded'
+
+   
+
+def modify(body):
+    print 'modify using {}'.format(newImage)
     response = ddb.put_item(
         TableName=dest_table,
         Item=newImage
     )
-
-    print response
-
-def modify(body):
-    insert(body)
 
 def remove(body):
     keys = body['keys']
