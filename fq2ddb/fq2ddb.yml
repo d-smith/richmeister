@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Create a lambda function to copy events from a dynamo db stream to a fifo queue.
+
+Parameters:
+  CodeBucketName:
+    Type: String
+    Description: Bucket containing lambda code zip file
+  ZipFileName:
+    Type: String
+    Default: fq2ddb.zip
+  ScheduleExpression:
+    Type: String
+    Default: "rate(1 minute)"
+    Description: >
+      Cloud watch event schedule expression used to determine
+      how often to execute the function. Align this with the 
+      function timeout to have a single lambda execution in
+      flight at a time.
+
+Resources:
+  CopyMachine:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "fq2ddb.handler"
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+          S3Bucket: !Ref CodeBucketName
+          S3Key: !Ref ZipFileName
+      Runtime: "nodejs6.10"
+      Timeout: "55"
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+            - edgelambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:*
+            Resource: arn:aws:logs:*:*:*
+
+  ScheduledRule: 
+    Type: "AWS::Events::Rule"
+    Properties: 
+      Description: "ScheduledRule"
+      ScheduleExpression: !Ref ScheduleExpression
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "CopyMachine"
+              - "Arn"
+          Id: "TargetFunctionV1"
+
+  PermissionForEventsToInvokeLambda: 
+    Type: "AWS::Lambda::Permission"
+    Properties: 
+      FunctionName: 
+        Ref: "CopyMachine"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "ScheduledRule"
+          - "Arn"
+
+
+  
