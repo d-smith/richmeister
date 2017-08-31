@@ -46,20 +46,21 @@ def modify(body):
     print 'modify using {}'.format(newImage)
 
     body_ts = newImage['ts']
-    print 'ts: {}'.format(body_ts)
+    body_wid = newImage['wid']
 
     try:
         response = ddb.put_item(
             TableName=dest_table,
             Item=newImage,
-            ConditionExpression=':ts > ts',
+            ConditionExpression='(:ts > ts) OR (:ts = ts AND :wid > wid)',
             ExpressionAttributeValues={
-                ':ts': body_ts
+                ':ts': body_ts,
+                ':wid': body_wid
             }
         )
     except ClientError as e:
         if e.response['Error']['Code'] == "ConditionalCheckFailedException":
-            print 'unable to replicate modify: ConditionalCheckFailedException'
+            print 'unable to replicate modify with ts {} and wid {}'.format(body_ts, body_wid)
         else:
             raise
     else:
@@ -75,7 +76,7 @@ def remove(body):
     response = ddb.delete_item(
         TableName=dest_table,
         Key=keys,
-        ConditionExpression='attribute_not_exists(id) OR (:ts > ts)',
+        ConditionExpression='attribute_not_exists(id) OR (:ts >= ts)',
         ExpressionAttributeValues={
             ':ts': body_ts
         }
