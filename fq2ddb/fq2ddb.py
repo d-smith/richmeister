@@ -32,8 +32,7 @@ def insert(body):
     print response
 
 def modify(body):
-    newImage = body['newImage']
-    print 'modify {}'.format(newImage)
+    insert(body)
 
 def remove(body):
     keys = body['keys']
