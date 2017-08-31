@@ -20,14 +20,13 @@ exports.handler = (event, context, callback) => {
     console.log(context);
 
     for (let record of event.Records) {
-        console.log(record.dynamodb.Keys);
-        console.log(record.dynamodb.NewImage);
 
         let ddbCtx = {};
         ddbCtx.timestamp = Date.now();
         ddbCtx.opcode = record.eventName;
         ddbCtx.keys = record.dynamodb.Keys;
         ddbCtx.newImage = record.dynamodb.NewImage;
+        ddbCtx.oldImage = record.dynamodb.OldImage;
         ddbCtx.writeId = uuidv4();
 
         console.log(ddbCtx)

@@ -69,9 +69,16 @@ def remove(body):
     keys = body['keys']
     print 'remove {}'.format(keys)
 
+    oldImage = body['oldImage']
+    body_ts = oldImage['ts']
+
     response = ddb.delete_item(
         TableName=dest_table,
-        Key=keys
+        Key=keys,
+        ConditionExpression='attribute_not_exists(id) OR (:ts > ts)',
+        ExpressionAttributeValues={
+            ':ts': body_ts
+        }
     )
 
     print response
