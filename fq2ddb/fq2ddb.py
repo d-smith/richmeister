@@ -39,6 +39,13 @@ def remove(body):
     keys = body['keys']
     print 'remove {}'.format(keys)
 
+    response = ddb.delete_item(
+        TableName=dest_table,
+        Key=keys
+    )
+
+    print response
+
 def process_body(msg):
     print 'handle {}'.format(msg)
     body = json.loads(msg)
