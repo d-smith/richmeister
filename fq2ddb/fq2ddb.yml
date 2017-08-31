@@ -29,6 +29,12 @@ Parameters:
   QueueName:
     Type: String
     Description: Name of the queue to receive messages from
+  DestinationTable:
+    Type: String
+    Description: Destination table
+  DestinationRegion:
+    Type: String
+    Description: Region containing destination table
 
 Resources:
   CopyMachine:
@@ -45,6 +51,8 @@ Resources:
         Variables:
           QUEUE_URL: !Ref QueueUrl
           TTL_SECONDS: !Ref FnTimeout
+          DEST_TABLE: !Ref DestinationTable
+          DEST_REGION: !Ref DestinationRegion
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -78,6 +86,16 @@ Resources:
             - sqs:DeleteMessage
             - sqs:ReceiveMessage
             Resource: !Join [ ':', ['arn:aws:sqs', !Ref "AWS::Region", !Ref "AWS::AccountId", !Ref "QueueName"]]
+      - PolicyName: tablewrite
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            Resource: !Join [ '', ['arn:aws:dynamodb:', !Ref 'DestinationRegion' , ':', !Ref 'AWS::AccountId', ':table/', !Ref 'DestinationTable']]
 
   ScheduledRule: 
     Type: "AWS::Events::Rule"
