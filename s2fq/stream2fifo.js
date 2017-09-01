@@ -20,6 +20,32 @@ exports.handler = (event, context, callback) => {
     console.log(context);
 
     for (let record of event.Records) {
+        console.log(record.dynamodb)
+        console.log(record.dynamodb.Keys);
+        console.log(record.dynamodb.NewImage);
+        
+
+        //Is replication indicated? Note we can only check on
+        //inserts and updates as there is no way to inject replication
+        //context on delete
+        if(record.eventName != 'REMOVE' && record.dynamodb.NewImage.replicate == undefined) {
+            console.log('Replication not indicated',record.dynamodb.Keys)
+            continue;
+        }
+        
+        //Replication indicated - are the timestamp and write id fields
+        //available?
+        let image = record.dynamodb.NewImage;
+        if (record.eventName == 'REMOVE') {
+            image = record.dynamodb.OldImage
+        }
+        
+        if (image.ts == undefined || image.wid == undefined) {
+            console.log('Replication requested but ts and/or wid fields not present', image);
+            continue;
+        }
+        
+        console.log('Replicating item with key', record.dynamodb.Keys)
 
         let ddbCtx = {};
         ddbCtx.timestamp = Date.now();
