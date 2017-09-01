@@ -11,8 +11,8 @@ var sqs = new AWS.SQS();
 
 
 exports.handler = (event, context, callback) => {
-    let queueUrl = process.env.QUEUE_URL;
-    let queueName = process.env.QUEUE_NAME;
+    const queueUrl = process.env.QUEUE_URL;
+    const queueName = process.env.QUEUE_NAME;
 
     console.log('event');
     console.log(event);
@@ -20,9 +20,9 @@ exports.handler = (event, context, callback) => {
     console.log(context);
 
     for (let record of event.Records) {
-        console.log(record.dynamodb)
-        console.log(record.dynamodb.Keys);
-        console.log(record.dynamodb.NewImage);
+        //console.log(record.dynamodb)
+        //console.log(record.dynamodb.Keys);
+        //console.log(record.dynamodb.NewImage);
         
 
         //Is replication indicated? Note we can only check on
@@ -47,7 +47,7 @@ exports.handler = (event, context, callback) => {
         
         console.log('Replicating item with key', record.dynamodb.Keys)
 
-        let ddbCtx = {};
+        const ddbCtx = {};
         ddbCtx.timestamp = Date.now();
         ddbCtx.opcode = record.eventName;
         ddbCtx.keys = record.dynamodb.Keys;
@@ -57,7 +57,7 @@ exports.handler = (event, context, callback) => {
 
         console.log(ddbCtx)
 
-        let params = {
+        const params = {
             MessageBody: JSON.stringify(ddbCtx),
             QueueUrl: queueUrl,
             MessageDeduplicationId: uuidv4(),
