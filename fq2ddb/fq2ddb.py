@@ -3,6 +3,7 @@ import os
 import datetime
 import time
 import json
+from botocore.exceptions import ClientError
 
 
 
@@ -24,23 +25,61 @@ def insert(body):
     newImage = body['newImage']
     print 'insert {}'.format(newImage)
 
-    response = ddb.put_item(
-        TableName=dest_table,
-        Item=newImage
-    )
+    try:
+        response = ddb.put_item(
+            TableName=dest_table,
+            Item=newImage,
+            ConditionExpression='attribute_not_exists(id)'
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            print 'unable to replicate insert: item with key {} exists in remote region'.format(body['keys'])
+        else:
+            raise
+    else:
+        print 'insert succeeded'
 
-    print response
+   
 
 def modify(body):
-    insert(body)
+    newImage = body['newImage']
+    print 'modify using {}'.format(newImage)
+
+    body_ts = newImage['ts']
+    body_wid = newImage['wid']
+
+    try:
+        response = ddb.put_item(
+            TableName=dest_table,
+            Item=newImage,
+            ConditionExpression='(:ts > ts) OR (:ts = ts AND :wid > wid)',
+            ExpressionAttributeValues={
+                ':ts': body_ts,
+                ':wid': body_wid
+            }
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            print 'unable to replicate modify with ts {} and wid {}'.format(body_ts, body_wid)
+        else:
+            raise
+    else:
+        print 'modify succeeded'
 
 def remove(body):
     keys = body['keys']
     print 'remove {}'.format(keys)
 
+    oldImage = body['oldImage']
+    body_ts = oldImage['ts']
+
     response = ddb.delete_item(
         TableName=dest_table,
-        Key=keys
+        Key=keys,
+        ConditionExpression='attribute_not_exists(id) OR (:ts >= ts)',
+        ExpressionAttributeValues={
+            ':ts': body_ts
+        }
     )
 
     print response
