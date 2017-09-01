@@ -46,7 +46,7 @@ exports.handler = (event, context, callback) => {
         }
         
         console.log('Replicating item with key', record.dynamodb.Keys)
-
+        
         const ddbCtx = {};
         ddbCtx.timestamp = Date.now();
         ddbCtx.opcode = record.eventName;
@@ -54,6 +54,14 @@ exports.handler = (event, context, callback) => {
         ddbCtx.newImage = record.dynamodb.NewImage;
         ddbCtx.oldImage = record.dynamodb.OldImage;
         ddbCtx.writeId = uuidv4();
+        
+        //Important: we need to remove the replicate property, otherwise when
+        //we update remote copies, they would replicate it back to use. The
+        //cycle would be broken by the merge conflict detection, but we want
+        //to eliminate the extra processing and cost up front when possible.
+        if (ddbCtx.newImage !== undefined) {
+            delete ddbCtx.newImage.replicate
+        }
 
         console.log(ddbCtx)
 
