@@ -73,14 +73,23 @@ def remove(body):
     oldImage = body['oldImage']
     body_ts = oldImage['ts']
 
-    response = ddb.delete_item(
-        TableName=dest_table,
-        Key=keys,
-        ConditionExpression='attribute_not_exists(id) OR (:ts >= ts)',
-        ExpressionAttributeValues={
-            ':ts': body_ts
-        }
-    )
+    try:
+        response = ddb.delete_item(
+            TableName=dest_table,
+            Key=keys,
+            ConditionExpression='attribute_not_exists(id) OR (:ts >= ts)',
+            ExpressionAttributeValues={
+                ':ts': body_ts
+            }
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            print 'unable to replicate delete due to conditional check failed (key {})'.format(keys)
+        else:
+            raise
+    else:
+        print 'modify succeeded'
+   
 
     print response
 
