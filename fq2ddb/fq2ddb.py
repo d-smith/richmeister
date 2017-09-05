@@ -6,12 +6,39 @@ import json
 from botocore.exceptions import ClientError
 
 
-
+# Table config from environment
 dest_table = os.environ['DEST_TABLE']
 dest_region = os.environ['DEST_REGION']
+stack_name = os.environ['STACK_NAME']
 
+# Use metric namespace unique to the stack
+metric_namespace = 'XtRepl' + stack_name
+
+# SDK handles
 sqs = boto3.client('sqs')
 ddb = boto3.client('dynamodb',region_name=dest_region)
+cw = boto3.client('cloudwatch')
+
+def pub_statistic(name):
+    response = cw.put_metric_data(
+            Namespace=metric_namespace,
+            MetricData=[
+                {
+                    'MetricName': name,
+                    'Dimensions': [
+                        {
+                            'Name':'table',
+                            'Value': dest_table
+                        }
+                    ],
+                    'Timestamp' : datetime.datetime.utcnow(),
+                    'Value':1.0,
+                    'Unit': 'Count'
+                }
+            ]
+        )
+    print response
+
 
 def hash_attribute(table_name):
     response = ddb.describe_table(
@@ -48,12 +75,14 @@ def insert(body):
             ConditionExpression=id_not_exists_condition(dest_table)
         )
     except ClientError as e:
+        pub_statistic('ReplicatedInsertErrorCount')
         if e.response['Error']['Code'] == "ConditionalCheckFailedException":
             print 'unable to replicate insert: item with key {} exists in remote region'.format(body['keys'])
         else:
             raise
     else:
         print 'insert succeeded'
+        pub_statistic('ReplicatedInsertCount')
 
    
 
@@ -75,12 +104,14 @@ def modify(body):
             }
         )
     except ClientError as e:
+        pub_statistic('ReplicatedModifyErrorCount')
         if e.response['Error']['Code'] == "ConditionalCheckFailedException":
             print 'unable to replicate modify with ts {} and wid {}'.format(body_ts, body_wid)
         else:
             raise
     else:
         print 'modify succeeded'
+        pub_statistic('ReplicatedModifyCount')
 
 def remove(body):
     keys = body['keys']
@@ -99,12 +130,14 @@ def remove(body):
             }
         )
     except ClientError as e:
+        pub_statistic('ReplicatedRemoveErrorCount')
         if e.response['Error']['Code'] == "ConditionalCheckFailedException":
             print 'unable to replicate delete due to conditional check failed (key {})'.format(keys)
         else:
             raise
     else:
-        print 'modify succeeded'
+        print 'remove succeeded'
+        pub_statistic('ReplicatedRemoveCount')
    
 
 
@@ -146,11 +179,11 @@ def lambda_handler(event, context):
     
     print 'runtime threshold: {}'.format(time_threshold_ms)
     
-    start = time.mktime(datetime.datetime.now().timetuple()) * 1000
+    start = time.mktime(datetime.datetime.utcnow().timetuple()) * 1000
     wait_time = wait_time_from_ttl(ttl)
 
     while True:
-        now = time.mktime(datetime.datetime.now().timetuple()) * 1000
+        now = time.mktime(datetime.datetime.utcnow().timetuple()) * 1000
         remaining = now - start
         if remaining > time_threshold_ms:
             print 'function exiting to avoid lambda timeout'
