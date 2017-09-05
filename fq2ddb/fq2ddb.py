@@ -13,6 +13,22 @@ dest_region = os.environ['DEST_REGION']
 sqs = boto3.client('sqs')
 ddb = boto3.client('dynamodb',region_name=dest_region)
 
+def hash_attribute(table_name):
+    response = ddb.describe_table(
+        TableName=table_name
+    )
+    
+    table = response['Table']
+    keySchema = table['KeySchema']
+    
+    for keyAttr in keySchema:
+        if keyAttr['KeyType'] == 'HASH':
+            return keyAttr['AttributeName']
+
+def id_not_exists_condition(table_name):
+    hash_attr = hash_attribute(table_name)
+    return 'attribute_not_exists({})'.format(hash_attr)
+
 # We use wait time to try to end our function gracefully instead of being
 # timed out by lambda
 def wait_time_from_ttl(ttl):
@@ -29,7 +45,7 @@ def insert(body):
         response = ddb.put_item(
             TableName=dest_table,
             Item=newImage,
-            ConditionExpression='attribute_not_exists(id)'
+            ConditionExpression=id_not_exists_condition(dest_table)
         )
     except ClientError as e:
         if e.response['Error']['Code'] == "ConditionalCheckFailedException":
@@ -77,7 +93,7 @@ def remove(body):
         response = ddb.delete_item(
             TableName=dest_table,
             Key=keys,
-            ConditionExpression='attribute_not_exists(id) OR (:ts >= ts)',
+            ConditionExpression='{} OR (:ts >= ts)'.format(id_not_exists_condition(dest_table)),
             ExpressionAttributeValues={
                 ':ts': body_ts
             }
@@ -91,7 +107,6 @@ def remove(body):
         print 'modify succeeded'
    
 
-    print response
 
 def process_body(msg):
     print 'handle {}'.format(msg)
@@ -115,27 +130,32 @@ def delete_message(queue_url,receipt_handle):
         ReceiptHandle=receipt_handle
     )   
 
+def dump_config_context(queue_url, ttl):
+    print 'config context:'
+    print '\tqueue_url: {}'.format(queue_url)
+    print '\tttl: {}'.format(ttl)
+    print '\tdestination region'.format(dest_region)
+    print '\tdestination table'.format(dest_table)
+
 def lambda_handler(event, context):
     queue_url = os.environ['QUEUE_URL']
     ttl = int(os.environ['TTL_SECONDS'])
     time_threshold_ms = 700 * ttl
+
+    dump_config_context(queue_url,ttl)
     
     print 'runtime threshold: {}'.format(time_threshold_ms)
     
     start = time.mktime(datetime.datetime.now().timetuple()) * 1000
     wait_time = wait_time_from_ttl(ttl)
 
-    print 'reading from {}'.format(queue_url)
-
     while True:
         now = time.mktime(datetime.datetime.now().timetuple()) * 1000
         remaining = now - start
-        print 'cumulative: {}'.format(remaining)
         if remaining > time_threshold_ms:
             print 'function exiting to avoid lambda timeout'
             return
         
-        print 'dequeue message'
         response = sqs.receive_message(
             QueueUrl = queue_url,
             MaxNumberOfMessages=1,
