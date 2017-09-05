@@ -53,6 +53,7 @@ Resources:
           TTL_SECONDS: !Ref FnTimeout
           DEST_TABLE: !Ref DestinationTable
           DEST_REGION: !Ref DestinationRegion
+          STACK_NAME: !Ref AWS::StackName
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -77,6 +78,14 @@ Resources:
             Action:
             - logs:*
             Resource: arn:aws:logs:*:*:*
+      - PolicyName: metrics
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - cloudwatch:PutMetricData
+            Resource: '*'
       - PolicyName: queue
         PolicyDocument:
           Version: '2012-10-17'
