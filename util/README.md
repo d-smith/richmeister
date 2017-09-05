@@ -8,5 +8,5 @@ aws dynamodb put-item --table-name serverless-rest-api-with-dynamodb-hc1 \
 
 <pre>
 aws dynamodb put-item --table-name serverless-rest-api-with-dynamodb-hc1 \
---item file://mode.json
+--item file://mod.json
 </pre>
