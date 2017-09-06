@@ -144,3 +144,6 @@ Resources:
 
 
   
+Outputs:
+  StackFunctionName:
+    Value: !Ref CopyMachine
