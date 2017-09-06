@@ -14,4 +14,6 @@ Feature: InputReplication
     
     Examples:
         | id | ts  | wid | present | rts  | rwid  | repts |
-        | x1 | 100 | a   | no      | 0    | x     | 100   |
+        | a1 | 100 | a   | no      | 0    | x     | 100   |
+        | a2 | 100 | a   | yes     | 90   | x     | 100   |
+        | a3 | 100 | a   | yes     | 110  | x     | 110   |
