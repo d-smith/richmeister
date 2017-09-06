@@ -4,3 +4,4 @@ package:
 
 deploy:
 	aws s3 cp fq2ddb.zip s3://$(DEPLOY_BUCKET)
+	aws s3 cp fq2ddb.yml s3://$(DEPLOY_BUCKET)

@@ -4,3 +4,4 @@ package:
 
 deploy:
 	aws s3 cp s2fq.zip s3://$(DEPLOY_BUCKET)
+	aws s3 cp s2fq.yml s3://$(DEPLOY_BUCKET)
