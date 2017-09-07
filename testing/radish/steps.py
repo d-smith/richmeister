@@ -1,4 +1,4 @@
-from radish import given, when, then, before
+from radish import given, when, then, step
 import os
 import boto3
 
@@ -39,7 +39,7 @@ def do_when(step):
     execute_lambda()
 
 @then("I expect the remote ts {repts:d}")
-def then(step, repts):
+def check_ts(step, repts):
     
     response = ddb_west.get_item(
         TableName='TestTable',
@@ -54,8 +54,15 @@ def then(step, repts):
     item = response['Item']
     remote_ts = int(item['ts']['N'])
 
+    region = item['region']['S']
+    step.context.region = region
+
     assert remote_ts == repts, "Remote ts is {}, expected {}".format(remote_ts, repts)
 
+@then("I expect region to be {region:S}")
+def check_region(step, region):
+    retrieved_region = step.context.region
+    assert retrieved_region == region, "Retrieved region is {}, expected {}".format(retrieved_region, region)
 
 def setup_remote(ctx):
     if ctx.present == 'no':
@@ -72,6 +79,9 @@ def setup_remote(ctx):
             },
             "wid": {
                 "S": ctx.rwid
+            },
+            "region": {
+                "S":"west"
             }
         }
     )
@@ -97,10 +107,13 @@ def insert_item_to_replicate(ctx):
                 "N": str(ctx.ts)
             },
             "wid": {
-                "S": ctx.rwid
+                "S": ctx.wid
             },
             "replicate": {
                 "BOOL": True
+            },
+            "region": {
+                "S":"east"
             }
         }
     )

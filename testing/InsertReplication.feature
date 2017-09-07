@@ -11,9 +11,13 @@ Feature: InputReplication
         And remote wid <rwid>
         When I replicate the insert
         Then I expect the remote ts <repts> 
+        Then I expect region to be <region>
     
     Examples:
-        | id | ts  | wid | present | rts  | rwid  | repts |
-        | a1 | 100 | a   | no      | 0    | x     | 100   |
-        | a2 | 100 | a   | yes     | 90   | x     | 100   |
-        | a3 | 100 | a   | yes     | 110  | x     | 110   |
+        | id | ts  | wid | present | rts  | rwid  | repts | region |
+        | a1 | 100 | a   | no      | 0    | x     | 100   | east   |
+        | a2 | 100 | a   | yes     | 90   | x     | 100   | east   |
+        | a3 | 100 | a   | yes     | 110  | x     | 110   | west   |
+        | a4 | 200 | z   | yes     | 200  | a     | 200   | east   |
+        | a5 | 300 | a   | yes     | 300  | z     | 300   | west   |
+        | a6 | 400 | a   | yes     | 400  | a     | 400   | west   |
