@@ -68,11 +68,18 @@ def insert(body):
     newImage = body['newImage']
     print 'insert {}'.format(newImage)
 
+    body_ts = newImage['ts']
+    body_wid = newImage['wid']
+
     try:
         response = ddb.put_item(
             TableName=dest_table,
             Item=newImage,
-            ConditionExpression=id_not_exists_condition(dest_table)
+            ConditionExpression='{} OR ((:ts > ts) OR (:ts = ts AND :wid > wid))'.format(id_not_exists_condition(dest_table)),
+            ExpressionAttributeValues={
+                ':ts': body_ts,
+                ':wid': body_wid
+            }
         )
     except ClientError as e:
         pub_statistic('ReplicatedInsertErrorCount')
@@ -97,7 +104,7 @@ def modify(body):
         response = ddb.put_item(
             TableName=dest_table,
             Item=newImage,
-            ConditionExpression='(:ts > ts) OR (:ts = ts AND :wid > wid)',
+            ConditionExpression='{} OR ((:ts > ts) OR (:ts = ts AND :wid > wid))'.format(id_not_exists_condition(dest_table)),
             ExpressionAttributeValues={
                 ':ts': body_ts,
                 ':wid': body_wid

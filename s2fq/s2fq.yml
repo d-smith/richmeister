@@ -90,3 +90,10 @@ Resources:
       QueueName: !Join [ '', [ !Ref "AWS::StackName", "-ReplQ.fifo"]]
       ContentBasedDeduplication: False
       FifoQueue: True
+
+Outputs:
+  QueueUrl:
+    Value: !Ref ReplicationQueue
+
+  QueueName:
+    Value: !GetAtt ReplicationQueue.QueueName

@@ -1,2 +1,4 @@
 setenv
 *.zip
+.ipynb_checkpoints
+*.pyc

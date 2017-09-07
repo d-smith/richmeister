@@ -35,6 +35,15 @@ Parameters:
   DestinationRegion:
     Type: String
     Description: Region containing destination table
+  ScheduleRuleState:
+    Type: String
+    Default: ENABLED
+    AllowedValues:
+      - ENABLED
+      - DISABLED
+    Description: >
+      Determines if the schedule rule used to periodically the function is enabled
+      or disabled.
 
 Resources:
   CopyMachine:
@@ -135,3 +144,6 @@ Resources:
 
 
   
+Outputs:
+  StackFunctionName:
+    Value: !Ref CopyMachine
