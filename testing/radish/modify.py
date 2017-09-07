@@ -11,6 +11,7 @@ ddb_east = boto3.client('dynamodb', region_name='us-east-1')
 
 @given("item {item:S}")
 def modify_this_one(step, item):
+    print 'modify_this_one'
     response = ddb_east.get_item(
         TableName='TestTable',
         Key={
@@ -29,6 +30,7 @@ def modify_this_one(step, item):
 
 @when("I modify it")
 def do_mod(step):
+    
     for k in step.context.ddb_item:
         print '{} -> {}'.format(k,step.context.ddb_item[k])
 
@@ -44,6 +46,7 @@ def do_mod(step):
 
 @step("replication runs")
 def replicate(step):
+    print 'replication runs'
     response = lambda_east.invoke(
         FunctionName=lambda_fn,
         LogType='Tail'
@@ -53,6 +56,7 @@ def replicate(step):
 
 @then("I expect {region:S}")
 def verify_mod_rep(step, region):
+    print 'verify_mod_rep'
 
     response = ddb_west.get_item(
         TableName='TestTable',

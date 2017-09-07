@@ -40,6 +40,7 @@ def do_when(step):
 
 @then("I expect the remote ts {repts:d}")
 def check_ts(step, repts):
+    print 'check_ts'
     
     response = ddb_west.get_item(
         TableName='TestTable',
