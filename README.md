@@ -1,6 +1,6 @@
 # richmeister
 
-Makin' copies, specifically copies of records written to a DynamoDB table
+[Makin' copies](http://www.nbc.com/saturday-night-live/video/copy-machine-ii/n10024?snl=1), specifically copies of records written to a DynamoDB table
 in one region to another region.
 
 This project implements a simple multi-master replication scheme for a DynamoDB
@@ -24,4 +24,4 @@ outage - the most recent user activity is preserved.
 
 For conflict resolution, the latest timestamp will be the winner, and if timestamps are identical, the write ids are compared to select the write. 
 
-The components can be installed using the provided cloud formation templates. Refer to the jupyter notebook in the testing directory to see what a multiregion set up looks like, and to view the test cases illustrating how conflict resolution works.
+The components can be installed using the provided cloud formation templates. Refer to the [jupyter](http://jupyter.org/) notebook in the testing directory to see what a multiregion set up looks like, and to view the test cases illustrating how conflict resolution works.
