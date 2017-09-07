@@ -104,7 +104,7 @@ def modify(body):
         response = ddb.put_item(
             TableName=dest_table,
             Item=newImage,
-            ConditionExpression='(:ts > ts) OR (:ts = ts AND :wid > wid)',
+            ConditionExpression='{} OR ((:ts > ts) OR (:ts = ts AND :wid > wid))'.format(id_not_exists_condition(dest_table)),
             ExpressionAttributeValues={
                 ':ts': body_ts,
                 ':wid': body_wid
