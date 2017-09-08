@@ -4,9 +4,11 @@ Feature: InputReplication
 
     Scenario Outline: Insert Replication
         Given an item with id <id>
+        And range key <rk>
         And timestamp <ts>
         And wid <wid>
         And remote item <present>
+        And remote rk <rrk>
         And remote ts <rts>
         And remote wid <rwid>
         When I replicate the insert
@@ -14,10 +16,12 @@ Feature: InputReplication
         Then I expect region to be <region>
     
     Examples:
-        | id | ts  | wid | present | rts  | rwid  | repts | region |
-        | a1 | 100 | a   | no      | 0    | x     | 100   | east   |
-        | a2 | 100 | a   | yes     | 90   | x     | 100   | east   |
-        | a3 | 100 | a   | yes     | 110  | x     | 110   | west   |
-        | a4 | 200 | z   | yes     | 200  | a     | 200   | east   |
-        | a5 | 300 | a   | yes     | 300  | z     | 300   | west   |
-        | a6 | 400 | a   | yes     | 400  | a     | 400   | west   |
+        | id | ts  | rk | wid | present | rrk | rts  | rwid  | repts | region |
+        | a0 | 100 | 1  | a   | no      | 1   | 0    | x     | 100   | east   |
+        | a1 | 100 | 1  | a   | yes     | 2   | 100  | a     | 100   | east   |
+        | aa | 100 | 1  | a   | yes     | 1   | 90   | x     | 100   | east   |
+        | aa | 100 | 2  | a   | yes     | 2   | 110  | x     | 110   | west   |
+        | aa | 200 | 3  | z   | yes     | 3   | 200  | a     | 200   | east   |
+        | aa | 300 | 4  | a   | yes     | 4   | 300  | z     | 300   | west   |
+        | aa | 400 | 5  | a   | yes     | 5   | 400  | a     | 400   | west   |
+ 
