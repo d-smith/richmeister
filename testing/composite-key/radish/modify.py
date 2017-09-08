@@ -9,14 +9,17 @@ ddb_west = boto3.client('dynamodb', region_name='us-west-2')
 ddb_east = boto3.client('dynamodb', region_name='us-east-1') 
 
 
-@given("item {item:S}")
-def modify_this_one(step, item):
+@given("id and sort {item:S} {sort:d}")
+def modify_this_one(step, item, sort):
     print 'modify_this_one'
     response = ddb_east.get_item(
-        TableName='TestTable',
+        TableName='CKTestTable',
         Key={
             "Id": {
                 "S": item
+            },
+            "Sort": {
+                "N": str(sort)
             }
         }
     )
@@ -27,6 +30,7 @@ def modify_this_one(step, item):
 
     step.context.ddb_item = ddb_item
     step.context.item = item
+    step.context.sort = sort
 
 @when("I modify it")
 def do_mod(step):
@@ -38,7 +42,7 @@ def do_mod(step):
     ddb_item['replicate'] = {'BOOL': True}
     
     response = ddb_east.put_item(
-        TableName='TestTable',
+        TableName='CKTestTable',
         Item=ddb_item
     )
 
@@ -59,10 +63,13 @@ def verify_mod_rep(step, region):
     print 'verify_mod_rep'
 
     response = ddb_west.get_item(
-        TableName='TestTable',
+        TableName='CKTestTable',
         Key={
             "Id": {
                 "S": step.context.item
+            },
+            "Sort": {
+                "N": str(step.context.sort)
             }
         }
     )

@@ -4,13 +4,16 @@ import boto3
 ddb_west = boto3.client('dynamodb', region_name='us-west-2')
 ddb_east = boto3.client('dynamodb', region_name='us-east-1')  
 
-@given("east item {eid:S} {ets:d} {ewid:S}")
-def east_create(step, eid, ets, ewid):
+@given("east item {eid:S} {erk:d} {ets:d} {ewid:S}")
+def east_create(step, eid, erk, ets, ewid):
     response = ddb_east.put_item(
-        TableName='TestTable',
+        TableName='CKTestTable',
         Item={
             "Id": {
                 "S": eid
+            },
+            "Sort": {
+                "N": str(erk)
             },
             "ts": {
                 "N": str(ets)
@@ -26,13 +29,16 @@ def east_create(step, eid, ets, ewid):
 
     print response
 
-@given("west item {wid:S} {wts:d} {wwid:S}")
-def west_create(step, wid, wts, wwid):
+@given("west item {wid:S} {wrk:d} {wts:d} {wwid:S}")
+def west_create(step, wid, wrk, wts, wwid):
     response = ddb_west.put_item(
-        TableName='TestTable',
+        TableName='CKTestTable',
         Item={
             "Id": {
                 "S": wid
+            },
+            "Sort": {
+                "N": str(wrk)
             },
             "ts": {
                 "N": str(wts)
