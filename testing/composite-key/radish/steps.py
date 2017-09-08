@@ -12,6 +12,10 @@ ddb_east = boto3.client('dynamodb', region_name='us-east-1')
 def have_id(step, item_id):
     step.context.id = item_id
 
+@given("range key {rk:d}")
+def have_range(step, rk):
+    step.context.rk = rk
+
 @given("timestamp {ts:g}")
 def have_ts(step, ts):
     step.context.ts = ts
@@ -23,6 +27,10 @@ def have_wid(step, wid):
 @given("remote item {present:S}")
 def remote_item_present(step, present):
     step.context.present = present
+
+@given("remote rk {rrk:d}")
+def remote_rk(step, rrk):
+    step.context.rrk = rrk
 
 @given("remote ts {rts:g}")
 def remote_ts(step, rts):
@@ -43,10 +51,13 @@ def check_ts(step, repts):
     print 'check_ts'
     
     response = ddb_west.get_item(
-        TableName='TestTable',
+        TableName='CKTestTable',
         Key={
             "Id": {
                 "S": step.context.id
+            },
+            "Sort": {
+                "N": str(step.context.rk)
             }
         }
     )
@@ -60,6 +71,9 @@ def check_ts(step, repts):
 
     assert remote_ts == repts, "Remote ts is {}, expected {}".format(remote_ts, repts)
 
+    if step.context.present != 'no' and step.context.rk != step.context.rrk:
+        check_remote_intact(step.context.id, step.context.rrk)
+
 @then("I expect region to be {region:S}")
 def check_region(step, region):
     retrieved_region = step.context.region
@@ -70,10 +84,13 @@ def setup_remote(ctx):
         return
 
     response = ddb_west.put_item(
-        TableName='TestTable',
+        TableName='CKTestTable',
         Item={
             "Id": {
                 "S": ctx.id
+            },
+            "Sort": {
+                "N": str(ctx.rrk)
             },
             "ts": {
                 "N": str(ctx.rts)
@@ -99,10 +116,13 @@ def execute_lambda():
 
 def insert_item_to_replicate(ctx):
     response = ddb_east.put_item(
-        TableName='TestTable',
+        TableName='CKTestTable',
         Item={
             "Id": {
                 "S": ctx.id
+            },
+            "Sort": {
+                "N": str(ctx.rk)
             },
             "ts": {
                 "N": str(ctx.ts)
@@ -120,3 +140,23 @@ def insert_item_to_replicate(ctx):
     )
 
     print response
+
+def check_remote_intact(id, rrk):
+
+    response = ddb_west.get_item(
+        TableName='CKTestTable',
+        Key={
+            "Id": {
+                "S": id
+            },
+            "Sort": {
+                "N": str(rrk)
+            }
+        }
+    )
+
+    print response
+
+    item = response['Item']
+    retrieved_region = item['region']['S']
+    assert retrieved_region == 'west', "Retrieved region is {}, expected west".format(retrieved_region)

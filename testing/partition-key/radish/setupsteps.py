@@ -7,7 +7,7 @@ ddb_east = boto3.client('dynamodb', region_name='us-east-1')
 @given("east item {eid:S} {ets:d} {ewid:S}")
 def east_create(step, eid, ets, ewid):
     response = ddb_east.put_item(
-        TableName='TestTable',
+        TableName='PKTestTable',
         Item={
             "Id": {
                 "S": eid
@@ -29,7 +29,7 @@ def east_create(step, eid, ets, ewid):
 @given("west item {wid:S} {wts:d} {wwid:S}")
 def west_create(step, wid, wts, wwid):
     response = ddb_west.put_item(
-        TableName='TestTable',
+        TableName='PKTestTable',
         Item={
             "Id": {
                 "S": wid

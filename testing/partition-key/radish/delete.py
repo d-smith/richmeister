@@ -12,7 +12,7 @@ def thing_to_delete(step, thing):
 @when("I delete it")
 def delete_it(step):
     response = ddb_east.delete_item(
-        TableName='TestTable',
+        TableName='PKTestTable',
         Key={
             'Id':{'S':step.context.thing}
         }
@@ -24,7 +24,7 @@ def delete_it(step):
 @then("result should be {this:S}")
 def result_should_be(step, this):
     response = ddb_west.get_item(
-        TableName='TestTable',
+        TableName='PKTestTable',
         Key={
             'Id':{'S':step.context.thing}
         }
