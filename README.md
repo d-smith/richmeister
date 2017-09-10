@@ -7,6 +7,8 @@ This project implements a simple multi-master replication scheme for a DynamoDB
 table that is present in two regions. The goal is to provide multi-master replication
 for active-active two region application topologies.
 
+<img src="./multi-master.png" width="100%" height="100%">
+
 This library imposes some requirements on the client:
 
 * When creating or modifying an item in the replicated table, the caller must include three attributes:
@@ -25,3 +27,4 @@ outage - the most recent user activity is preserved.
 For conflict resolution, the latest timestamp will be the winner, and if timestamps are identical, the write ids are compared to select the write. 
 
 The components can be installed using the provided cloud formation templates. Refer to the [jupyter](http://jupyter.org/) notebook in the testing directory to see what a multiregion set up looks like, and to view the test cases illustrating how conflict resolution works.
+I
